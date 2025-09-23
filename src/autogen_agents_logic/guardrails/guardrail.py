@@ -9,20 +9,20 @@ class GuardrailAgents:
         self._prompt_config = GuardrailPromptConfig()
 
     def input_guardrail_agent(self):
-        prompt_config = self.prompt_config._get_prompt(key="input_guardrail_prompts")
+        prompt_config = self._prompt_config.get_prompt(key="input_guardrail_prompts")
 
         input_guardrail = AssistantAgent(
             name=prompt_config.get("name", None),
             description=prompt_config.get("description", None),
             model_client=self.model_client,
             system_message=prompt_config.get("system_prompt", None),
-            output_content_type=InputGuardrailPydanticModel()
+            output_content_type=InputGuardrailPydanticModel
         )
 
         return input_guardrail
     
     def output_guardrail_agent(self):
-        prompt_config = self.prompt_config._get_prompt(key="refining_prompt")
+        prompt_config = self._prompt_config.get_prompt(key="refining_prompt")
 
         output_guardrail = AssistantAgent(
             name=prompt_config.get("name", None),

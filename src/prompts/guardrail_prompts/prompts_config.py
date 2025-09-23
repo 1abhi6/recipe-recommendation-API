@@ -20,6 +20,3 @@ class GuardrailPromptConfig:
             raise KeyError(f"Prompt '{key}' not found in config")
         
         return prompt_dict
-
-response = GuardrailPromptConfig().get_prompt(key="generate_recipe_prompt") 
-print(response)
