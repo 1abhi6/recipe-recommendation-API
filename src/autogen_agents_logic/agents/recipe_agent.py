@@ -1,6 +1,6 @@
 from autogen_agentchat.agents import AssistantAgent
-from src.prompts.agent_prompts.prompts_config import AgentPromptConfig
-from src.model_client.model_client import ModelClient
+from src.prompts.agent_prompts import AgentPromptConfig
+from src.autogen_agents_logic.model_client import ModelClient
 
 class RecipeAgents:
     def __init__(self):

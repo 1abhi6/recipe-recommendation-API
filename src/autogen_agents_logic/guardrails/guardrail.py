@@ -1,6 +1,6 @@
 from autogen_agentchat.agents import AssistantAgent
-from src.model_client.model_client import ModelClient
-from src.prompts.guardrail_prompts.prompts_config import GuardrailPromptConfig
+from src.autogen_agents_logic.model_client import ModelClient
+from src.prompts.guardrail_prompts import GuardrailPromptConfig
 
 
 class GuardrailAgents:
