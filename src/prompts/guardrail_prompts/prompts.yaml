@@ -1,0 +1,20 @@
+GUARDRAIL_PROMPTS:
+  refining_prompt:
+    name: "Prompt_Refining_Agent"
+    description: "Prompt for Refining the user prompt"
+    system_prompt: |
+     "You will recieve prompt from the user and your task is to refine it so that"
+
+  generate_recipe_prompt:
+    name: "Prompt_Refining_Agent"
+    description: "Prompt for Refining the user prompt"
+    system_prompt: |
+     "You will recieve prompt from the user and your task is to refine it so that"
+
+  reviewer_prompt:
+    name: "Prompt_Refining_Agent"
+    description: "Prompt for Refining the user prompt"
+    system_prompt: |
+     "You will recieve prompt from the user and your task is to refine it so that"
+
+  

@@ -1,8 +1,0 @@
-PROMPTS:
-  refine_prompt_agent:
-    name: "Prompt_Refining_Agent"
-    description: "Prompt for Refining the user prompt"
-    system_prompt: |
-     "You will recieve prompt from the user and your task is to refine it so that"
-
-  

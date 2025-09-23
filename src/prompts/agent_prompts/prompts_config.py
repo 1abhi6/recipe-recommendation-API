@@ -1,7 +1,7 @@
 import os
 import yaml
 
-class PromptConfig:
+class AgentPromptConfig:
     def __init__(self, config_file=None):
         if config_file is None:
             base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +20,3 @@ class PromptConfig:
             raise KeyError(f"Prompt '{key}' not found in config")
         
         return prompt_dict
-    
-response = PromptConfig().get_prompt("refine_prompt_agent")
-print(response.get("system_prompt", None))
