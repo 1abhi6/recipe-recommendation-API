@@ -1,44 +1,39 @@
 import asyncio
-from src.autogen_agents_logic.guardrails import GuardrailAgents
-from src.autogen_agents_logic.agents import RecipeAgents
-from autogen_agentchat.teams import RoundRobinGroupChat
-from autogen_agentchat.conditions import TextMentionTermination
+from src.orchestrator import Orchestrator
+
 
 async def main():
-    user_input = "Surprise me!"
-    
-    guardrail_agents = GuardrailAgents()
-    recipe_agents = RecipeAgents()
-    
-    # Implement Input Guardrail
-    input_guardrail_agent = guardrail_agents.input_guardrail_agent()
-    response = await input_guardrail_agent.run(task=user_input)
-    
+    user_input = "HEy How are you!"
+
+    orchestrator = Orchestrator(user_input=user_input)
+
+    input_guardrail = await orchestrator.input_guardrail()
+
     # Check condition
-    if not response.messages[-1].content.status:
+    if not input_guardrail.status:
         # END the response
-        pass
-    
-    # If input is within the context
-    prompt_refining_agent = recipe_agents.prompt_refining_agent()
-    recipe_generator_agent = recipe_agents.recipe_generator_agent()
-    reviewer_agent = recipe_agents.reviewer_agent()
-    
-    termination_condition = TextMentionTermination("APPROVE")
-    
-    team = RoundRobinGroupChat(
-        participants=[prompt_refining_agent, recipe_generator_agent, reviewer_agent],
-        termination_condition=termination_condition
-    )
-    
-    response = await team.run(task=user_input)
-    
-    
-    print(response)
-    
-    print("\n\n\n")
-    
-    print(response.messages[-1].content)
+        print(f"Input Guardrail failed! \n User Message: {user_input}")
+        print("Reponse", input_guardrail.message)
+
+    else:
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            generated_recipe = await orchestrator.generate_recipe()
+            output_guardrail = await orchestrator.output_guardrail(
+                generated_recipe=generated_recipe
+            )
+
+            if output_guardrail.status:
+                print("✅ Output Guardrail Passed!")
+                print(f"Generated Recipe:\n{generated_recipe}")
+                break
+            else:
+                print(f"⚠️ Output Guardrail failed on attempt {attempt}")
+                if attempt == max_retries:
+                    print("❌ Max retries reached. Ending execution.")
+                else:
+                    print("🔄 Retrying...\n")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
