@@ -1,1 +1,1 @@
-from .guardrail_models import InputGuardrailPydanticModel
+from .guardrail_models import GuardrailPydanticModel
