@@ -1,6 +1,5 @@
 import os
 import yaml
-from jinja2 import Template, Environment, meta
 
 class PromptConfig:
     def __init__(self, config_file=None):
@@ -21,3 +20,6 @@ class PromptConfig:
             raise KeyError(f"Prompt '{key}' not found in config")
         
         return prompt_dict
+    
+response = PromptConfig().get_prompt("refine_prompt_agent")
+print(response.get("system_prompt", None))
