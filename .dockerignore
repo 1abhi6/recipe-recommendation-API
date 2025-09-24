@@ -1,0 +1,28 @@
+# Python cache & compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment & config files (you’ll inject via --env-file at runtime)
+.env
+
+# VCS
+.git/
+.gitignore
+
+# Docker & build artifacts
+*.log
+*.lock
+*.db
+*.sqlite3
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
