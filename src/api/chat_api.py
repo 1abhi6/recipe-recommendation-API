@@ -1,10 +1,19 @@
+import os
 import uuid
-from fastapi import APIRouter
+
+from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
+
 from src.config import redis_client
 from src.orchestrator import Orchestrator
 
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY", None)
+security = HTTPBearer()
 router = APIRouter()
 
 
@@ -22,6 +31,13 @@ def session_meta_key(session_id: str):
 
 def session_exists(session_id: str) -> bool:
     return redis_client.exists(session_meta_key(session_id)) > 0
+
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Security(security)):
+    if credentials.credentials != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return True
+
 
 @router.get("/")
 def api_overview():
@@ -45,8 +61,9 @@ def api_overview():
     }
     return JSONResponse(content=overview, status_code=200)
 
+
 @router.post("/chat/new")
-def create_session():
+def create_session(authorized: bool = Depends(verify_api_key)):
     session_id = str(uuid.uuid4())
     redis_client.hset(
         session_meta_key(session_id),
@@ -57,7 +74,9 @@ def create_session():
 
 
 @router.get("/chat/{session_id}")
-async def chat_with_session(session_id: str, user_input: str):
+async def chat_with_session(
+    session_id: str, user_input: str, authorized: bool = Depends(verify_api_key)
+):
     if not session_exists(session_id):
         return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     orchestrator = Orchestrator(user_input=user_input)
@@ -83,33 +102,39 @@ async def chat_with_session(session_id: str, user_input: str):
 
 
 @router.get("/chat/{session_id}/history")
-def get_history(session_id: str):
+def get_history(session_id: str, authorized: bool = Depends(verify_api_key)):
     if not session_exists(session_id):
         return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     history = redis_client.lrange(session_key(session_id), 0, -1)
-    return JSONResponse(content={"session_id": session_id, "history": history}, status_code=200)
+    return JSONResponse(
+        content={"session_id": session_id, "history": history}, status_code=200
+    )
 
 
 @router.post("/chat/{session_id}/clear")
-def clear_history(session_id: str):
+def clear_history(session_id: str, authorized: bool = Depends(verify_api_key)):
     if not session_exists(session_id):
         return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     redis_client.delete(session_key(session_id))
     redis_client.hset(session_meta_key(session_id), "messages", 0)
-    return JSONResponse(content={"session_id": session_id, "cleared": True}, status_code=200)
+    return JSONResponse(
+        content={"session_id": session_id, "cleared": True}, status_code=200
+    )
 
 
 @router.delete("/chat/{session_id}")
-def delete_session(session_id: str):
+def delete_session(session_id: str, authorized: bool = Depends(verify_api_key)):
     if not session_exists(session_id):
         return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     redis_client.delete(session_key(session_id))
     redis_client.delete(session_meta_key(session_id))
-    return JSONResponse(content={"session_id": session_id, "deleted": True}, status_code=200)
+    return JSONResponse(
+        content={"session_id": session_id, "deleted": True}, status_code=200
+    )
 
 
 @router.get("/sessions")
-def list_sessions():
+def list_sessions(authorized: bool = Depends(verify_api_key)):
     keys = redis_client.keys("session:*:meta")
     sessions = []
     for key in keys:
@@ -131,5 +156,6 @@ def health():
         pong = redis_client.ping()
         return JSONResponse(content={"status": "ok", "redis": pong}, status_code=200)
     except Exception as e:
-        return JSONResponse(content={"status": "error", "detail": str(e)}, status_code=500)
-
+        return JSONResponse(
+            content={"status": "error", "detail": str(e)}, status_code=500
+        )

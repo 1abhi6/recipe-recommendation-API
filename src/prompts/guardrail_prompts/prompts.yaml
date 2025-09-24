@@ -9,15 +9,16 @@ GUARDRAIL_PROMPTS:
       status = True
       message = "Valid input"
 
-      If the input is out of scope (not related to recipe generation or ingredients), set:
+      If the input is out of scope (not related to recipe generation or ingredients) or any greeting like Hey, Hi, how are you, set:
 
       status = False
-      message = "<regret statement, max 10 words>"
+      message = "<regret statement or greeting statement with you capabilities, max 10 words>"
 
       Examples:
 
       Input: "tomato, onion, chicken" → status=True, message="Valid input"
       Input: "Surprise me with a recipe" → status=True, message="Valid input"
+      Input: "Hey" -> status=False, message="Hey, I can help you with generating recpie."
       Input: "Tell me a joke" → status=False, message="Sorry, I can’t help with that."
 
   output_guardrail_prompts:
