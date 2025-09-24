@@ -1,5 +1,6 @@
 import uuid
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from src.config import redis_client
 from src.orchestrator import Orchestrator
@@ -22,6 +23,27 @@ def session_meta_key(session_id: str):
 def session_exists(session_id: str) -> bool:
     return redis_client.exists(session_meta_key(session_id)) > 0
 
+@router.get("/")
+def api_overview():
+    try:
+        redis_status = redis_client.ping()
+    except Exception as e:
+        redis_status = f"error: {str(e)}"
+    overview = {
+        "api": "Recipe Recommendation API",
+        "routes": [
+            "/chat/new",
+            "/chat/{session_id}",
+            "/chat/{session_id}/history",
+            "/chat/{session_id}/clear",
+            "/chat/{session_id} [DELETE]",
+            "/sessions",
+            "/health",
+            "/",
+        ],
+        "redis_status": redis_status,
+    }
+    return JSONResponse(content=overview, status_code=200)
 
 @router.post("/chat/new")
 def create_session():
@@ -31,14 +53,13 @@ def create_session():
         mapping={"created_at": str(uuid.uuid1().time), "messages": 0},
     )
     redis_client.delete(session_key(session_id))
-    return {"session_id": session_id}
+    return JSONResponse(content={"session_id": session_id}, status_code=201)
 
 
 @router.get("/chat/{session_id}")
 async def chat_with_session(session_id: str, user_input: str):
     if not session_exists(session_id):
-        raise HTTPException(status_code=404, detail="Session not found")
-    # Orchestrate chat and store history
+        return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     orchestrator = Orchestrator(user_input=user_input)
     input_guardrail = await orchestrator.input_guardrail()
     if not input_guardrail.status:
@@ -53,39 +74,38 @@ async def chat_with_session(session_id: str, user_input: str):
         else:
             response = output_guardrail.message
 
-    # Save history
     message = {"role": "user", "content": user_input}
     response_msg = {"role": "assistant", "content": response}
     redis_client.rpush(session_key(session_id), str(message))
     redis_client.rpush(session_key(session_id), str(response_msg))
     redis_client.hincrby(session_meta_key(session_id), "messages", 2)
-    return {"response": response}
+    return JSONResponse(content={"response": response}, status_code=200)
 
 
 @router.get("/chat/{session_id}/history")
 def get_history(session_id: str):
     if not session_exists(session_id):
-        raise HTTPException(status_code=404, detail="Session not found")
+        return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     history = redis_client.lrange(session_key(session_id), 0, -1)
-    return {"session_id": session_id, "history": history}
+    return JSONResponse(content={"session_id": session_id, "history": history}, status_code=200)
 
 
 @router.post("/chat/{session_id}/clear")
 def clear_history(session_id: str):
     if not session_exists(session_id):
-        raise HTTPException(status_code=404, detail="Session not found")
+        return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     redis_client.delete(session_key(session_id))
     redis_client.hset(session_meta_key(session_id), "messages", 0)
-    return {"session_id": session_id, "cleared": True}
+    return JSONResponse(content={"session_id": session_id, "cleared": True}, status_code=200)
 
 
 @router.delete("/chat/{session_id}")
 def delete_session(session_id: str):
     if not session_exists(session_id):
-        raise HTTPException(status_code=404, detail="Session not found")
+        return JSONResponse(content={"detail": "Session not found"}, status_code=404)
     redis_client.delete(session_key(session_id))
     redis_client.delete(session_meta_key(session_id))
-    return {"session_id": session_id, "deleted": True}
+    return JSONResponse(content={"session_id": session_id, "deleted": True}, status_code=200)
 
 
 @router.get("/sessions")
@@ -102,13 +122,14 @@ def list_sessions():
                 "messages": meta.get("messages"),
             }
         )
-    return {"sessions": sessions}
+    return JSONResponse(content={"sessions": sessions}, status_code=200)
 
 
 @router.get("/health")
 def health():
     try:
         pong = redis_client.ping()
-        return {"status": "ok", "redis": pong}
+        return JSONResponse(content={"status": "ok", "redis": pong}, status_code=200)
     except Exception as e:
-        return {"status": "error", "detail": str(e)}
+        return JSONResponse(content={"status": "error", "detail": str(e)}, status_code=500)
+
