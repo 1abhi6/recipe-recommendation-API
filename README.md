@@ -32,17 +32,15 @@ You can run the API instantly using Docker. No need to install dependencies or s
    cp .env.example .env
    # Edit .env with your OpenAI and Redis credentials if needed
    ```
-
 2. **Pull and Run Docker image:**
 
    ```bash
-   docker pull <docker-hub-username>/recipe-recommendation-api:latest
-   docker run --env-file .env -p 8000:8000 <docker-hub-username>/recipe-recommendation-api:latest
+   docker pull iautomates/recipe-recommendation-api:v1
+   docker run --env-file .env -p 8000:8000 iautomates/recipe-recommendation-api:v1
    ```
 
-   > _Replace `<docker-hub-username>` with your actual Docker Hub username._
-
-3. **API is now live at:** [http://localhost:8000](http://localhost:8000)
+   > **API is now live at:**[http://localhost:8000](http://localhost:8000)
+   >
 
 ---
 
@@ -56,14 +54,12 @@ If you want to work with the code or customize, follow these steps:
    git clone https://github.com/1abhi6/recipe-recommendation-API.git
    cd recipe-recommendation-API
    ```
-
 2. **Set up virtual environment (.venv):**
 
    ```bash
    python -m venv .venv
    source .venv/bin/activate   # On Windows: .venv\Scripts\activate
    ```
-
 3. **Install dependencies (using `uv` and `pyproject.toml`):**
 
    ```bash
@@ -72,14 +68,12 @@ If you want to work with the code or customize, follow these steps:
    # OR, if using pyproject.toml
    uv pip install -e .
    ```
-
 4. **Configure environment:**
 
    ```bash
    cp .env.example .env
    # Edit .env with your API keys and Redis config
    ```
-
 5. **Run the API locally:**
 
    ```bash
