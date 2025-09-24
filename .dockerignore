@@ -11,6 +11,7 @@ env/
 
 # Environment & config files (you’ll inject via --env-file at runtime)
 .env
+.env.example
 
 # VCS
 .git/
