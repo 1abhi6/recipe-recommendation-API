@@ -1,5 +1,20 @@
 import asyncio
+from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from src.orchestrator import Orchestrator
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+API_KEY = os.getenv("API_KEY", None)
+
+security = HTTPBearer()
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Security(security)):
+    if credentials.credentials != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return True
 
 
 async def main():
