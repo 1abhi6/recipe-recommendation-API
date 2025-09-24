@@ -1,34 +1,40 @@
-# 1. Use the official Python 3.13 image as the base
-FROM python:3.12-slim
+# Use official lightweight Python image (supports Python 3.12)
+FROM python:3.12-slim AS base
 
-# 2. Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
+# Set environment variables (prevent Python from writing .pyc & ensure stdout/stderr are unbuffered)
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install system dependencies (for building some Python packages)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    libffi-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Install uv (modern Python package manager)
-RUN pip install --no-cache-dir uv
+# Create a non-root user for security
+RUN useradd -m appuser
 
-# 4. Set working directory
+# Set working directory
 WORKDIR /app
 
-# 5. Copy project files
-COPY pyproject.toml uv.lock ./
-COPY . .
+# Copy dependency files first (leverage Docker cache)
+COPY pyproject.toml uv.lock* ./
 
-# 6. Ensure .env is ignored (security best practice)
-# The .env should be mounted as a secret or via environment variables
+# Install dependencies using pip (PEP 621 compatible with pyproject.toml)
+RUN pip install --upgrade pip \
+    && pip install .
 
-# 7. Install dependencies using uv
-RUN uv pip install --system --no-deps --sync
+# Copy project files (but not .env, thanks to .dockerignore)
+COPY src ./src
+COPY main.py ./
+COPY README.md ./
 
-# 8. Expose FastAPI port
+# Switch to non-root user
+USER appuser
+
+# Expose FastAPI port
 EXPOSE 8000
 
-# 9. Set environment variables for production
-ENV PYTHONUNBUFFERED=1
-ENV UVICORN_WORKERS=1
-
-# 10. Default command to run FastAPI app
+# Run FastAPI app with uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
